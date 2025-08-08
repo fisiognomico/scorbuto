@@ -1,6 +1,8 @@
 {
   "dependencies": {
-    "@yume-chan/adb-daemon-webusb": "^2.1.0"
+    "@yume-chan/adb-credential-web": "^2.1.0",
+    "@yume-chan/adb-daemon-webusb": "^2.1.0",
+    "@yume-chan/adb-scrcpy": "^2.1.1"
   },
   "devDependencies": {
     "html-webpack-plugin": "^5.6.3",

@@ -2,43 +2,174 @@
 <html>
 <head>
   <title>ADB Device Detector</title>
-  <style>
+    <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 25px;
+      margin-bottom: 25px;
+    }
+
     #status {
       padding: 20px;
-      border: 3px solid #ccc;
       border-radius: 8px;
-      font-family: sans-serif;
       text-align: center;
-      max-width: 300px;
-      margin: 50px auto;
       font-size: 1.2rem;
+      font-weight: 500;
       transition: all 0.3s ease;
     }
+
     .enabled {
       background-color: #d4edda;
-      border-color: #28a745;
+      border: 2px solid #28a745;
       color: #155724;
     }
+
     .disabled {
       background-color: #f8d7da;
-      border-color: #dc3545;
+      border: 2px solid #dc3545;
       color: #721c24;
     }
-    #connectBtn {
-      display: block;
-      margin: 20px auto;
+
+    .btn {
+      display: inline-block;
       padding: 10px 20px;
       background: #007bff;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: #0069d9;
+    }
+
+    .btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .upload-area {
+      border: 2px dashed #007bff;
+      border-radius: 8px;
+      padding: 40px 20px;
+      text-align: center;
+      margin: 20px 0;
+      background-color: #f8f9fa;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .upload-area:hover, .upload-area.drag-over {
+      background-color: #e9f7fe;
+      border-color: #0056b3;
+    }
+
+    .upload-area p {
+      margin: 10px 0;
+      color: #495057;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .progress-container {
+      margin: 20px 0;
+      height: 8px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: #28a745;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .status-text {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .success {
+      color: #28a745;
+    }
+
+    .error {
+      color: #dc3545;
+    }
+
+    .file-list {
+      margin-top: 20px;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .file-info {
+      flex-grow: 1;
+    }
+
+    .file-size {
+      color: #6c757d;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
-  <div id="status">Connect Android device via USB</div>
-  <button id="connectBtn">Connect Device</button>
+  <div class="card">
+    <h1>ADB Device File Uploader</h1>
+
+    <div id="status" class="disabled">Connect Android device via USB</div>
+
+    <div class="controls">
+      <button id="connectBtn" class="btn">Connect Device</button>
+    </div>
+  </div>
+
+  <div class="card" id="uploadSection" style="display:none;">
+    <h2>Upload Files to Device</h2>
+
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" multiple>
+      <p>Click or drag files here to upload</p>
+      <p class="small">Files will be saved to <code>/sdcard/Downloads/web-uploads/</code></p>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <p class="status-text" id="statusText"></p>
+
+    <div class="file-list" id="fileList"></div>
+
+    <button id="uploadBtn" class="btn" disabled>Upload Selected Files</button>
+  </div>
+
   <script src="bundle.js"></script>
 </body>
 </html>
