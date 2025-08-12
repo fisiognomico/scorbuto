@@ -8,11 +8,11 @@ const statusDiv = document.getElementById('status')!;
 const connectBtn = document.getElementById('connectBtn') as HTMLButtonElement;
 const uploadSection = document.getElementById('uploadSection')!;
 const uploadArea = document.getElementById('uploadArea')!;
-const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const uploadBtn = document.getElementById('uploadBtn') as HTMLButtonElement;
 const progressBar = document.getElementById('progressBar') as HTMLDivElement;
 const statusText = document.getElementById('statusText')!;
 const fileList = document.getElementById('fileList')!;
+let fileInput = document.getElementById('fileInput') as HTMLInputElement;
 
 // Browser compatibility check
 if (!navigator.usb) {
@@ -90,7 +90,6 @@ async function connectToDevice() {
       await adbClient.close();
     }
 
-    // TODO currentDevice?
     let adbConnection = await currentDevice.connect();
     let readable = adbConnection.readable;
     let writable = adbConnection.writable;
@@ -113,7 +112,56 @@ async function connectToDevice() {
 
 // File selection handling
 uploadArea.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', handleFileSelect);
+fileInput.addEventListener('change', () => {
+  console.log('[DEBUG] File input change event triggered');
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    console.log('[DEBUG] No files selected');
+    return;
+  }
+
+  // Create a new array from the files
+  selectedFiles = [];
+  for (let i = 0; i < fileInput.files.length; i++) {
+    selectedFiles.push(fileInput.files[i]);
+  }
+
+  console.log(`[DEBUG] Selected ${selectedFiles.length} files`);
+  renderFileList();
+  uploadBtn.disabled = false;
+
+  // Reset the input to allow selecting the same file again
+  // fileInput.value = '';
+});
+
+// Reset the input only after successful upload
+function resetFileInput() {
+  // Create a new input element to replace the old one
+  const newInput = document.createElement('input');
+  newInput.type = 'file';
+  newInput.id = 'fileInput';
+  newInput.multiple = true;
+  newInput.style.display = 'none';
+
+  // Add event listener to the new input
+  newInput.addEventListener('change', () => {
+    if (!newInput.files || newInput.files.length === 0) return;
+    selectedFiles = Array.from(newInput.files);
+    renderFileList();
+    uploadBtn.disabled = false;
+  });
+
+  // Replace the old input with the new one
+  const parent = fileInput.parentNode;
+  parent?.replaceChild(newInput, fileInput);
+  fileInput = newInput as HTMLInputElement;
+
+  // Also reset the selectedFiles array
+  selectedFiles = [];
+  renderFileList();
+  uploadBtn.disabled = true;
+}
+
 
 uploadArea.addEventListener('dragover', (e) => {
   e.preventDefault();
@@ -128,19 +176,22 @@ uploadArea.addEventListener('drop', (e) => {
   e.preventDefault();
   uploadArea.classList.remove('drag-over');
 
-  if (e.dataTransfer?.files) {
-    fileInput.files = e.dataTransfer.files;
-    handleFileSelect();
+  if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) {
+    console.log('[DEBUG] No files in drop event');
+    return;
   }
-});
 
-function handleFileSelect() {
-  if (!fileInput.files || fileInput.files.length === 0) return;
+  console.log(`[DEBUG] Dropped ${e.dataTransfer.files.length} files`);
 
-  selectedFiles = Array.from(fileInput.files);
+  // Create a new array from the dropped files
+  selectedFiles = [];
+  for (let i = 0; i < e.dataTransfer.files.length; i++) {
+    selectedFiles.push(e.dataTransfer.files[i]);
+  }
+
   renderFileList();
   uploadBtn.disabled = false;
-}
+});
 
 function renderFileList() {
   fileList.innerHTML = '';
@@ -217,13 +268,8 @@ uploadBtn.addEventListener('click', async () => {
 
       statusText.textContent = 'All files uploaded successfully!';
       statusText.className = 'status-text success';
+      resetFileInput();
     }
-
-    // Reset selection
-    selectedFiles = [];
-    renderFileList();
-    uploadBtn.disabled = true;
-    fileInput.value = '';
 
   } catch (error) {
     console.error('Upload error:', error);
@@ -235,6 +281,13 @@ uploadBtn.addEventListener('click', async () => {
 });
 
 async function uploadFile(sync: AdbSync, file: File) {
+  if (!file || file.size === 0) {
+    console.error('[DEBUG] Invalid file reference', file);
+    throw new Error('Invalid file reference');
+  }
+
+  console.log(`[DEBUG] Starting upload for: ${file.name} (${file.size} bytes)`);
+
   statusText.textContent = `Uploading: ${file.name}...`;
   statusText.className = 'status-text';
   progressBar.style.width = '0%';
