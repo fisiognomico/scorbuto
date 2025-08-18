@@ -1,9 +1,9 @@
-import { AdbDaemonWebUsbDevice, AdbDaemonWebUsbDeviceObserver, AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
-import { Adb, AdbDaemonDevice, AdbSync, AdbDaemonTransport } from "@yume-chan/adb";
+import { AdbDaemonWebUsbDeviceObserver} from "@yume-chan/adb-daemon-webusb";
+import { Adb, AdbSync } from "@yume-chan/adb";
 import { ReadableStream, TextDecoderStream, WritableStream } from "@yume-chan/stream-extra";
 import { PackageManager } from "@yume-chan/android-bin";
 
-import { getDeviceState, setDeviceState, connectToDevice, disconnectDevice, initializeCredentials } from "./state";
+import {getDeviceState, setDeviceState, connectToDevice, disconnectDevice, initializeCredentials} from "./state";
 
 const statusDiv = document.getElementById('status')!;
 const connectBtn = document.getElementById('connectBtn') as HTMLButtonElement;
@@ -30,6 +30,11 @@ if (!navigator.usb) {
 let observer: AdbDaemonWebUsbDeviceObserver | null = null;
 let selectedFiles: File[] = [];
 const UPLOAD_PATH = '/sdcard/Downloads/web-uploads/';
+
+interface ProcessOutput {
+  output: string;
+  exitCode: number;
+}
 
 function updateStatus() {
   const state = getDeviceState();
@@ -418,27 +423,8 @@ async function loadInstalledApps() {
 
   try {
     // Directly use pm -3 for third-party apps
-    const shell = await adbClient!.subprocess.shellProtocol!.spawn(['pm', 'list', 'packages', '-3']);
-    var output: string = "";
-    // Stdout and stderr will generate two Promise, await them together
-    await Promise.all([
-      shell.stdout.pipeThrough(new TextDecoderStream()).pipeTo(
-        new WritableStream({
-          write(chunk) {
-            output = chunk;
-          },
-        }),
-      ),
-      shell.stderr.pipeThrough(new TextDecoderStream()).pipeTo(
-        new WritableStream({
-          write(chunk) {
-            console.error(["[*] PM LIST ERR ", chunk]);
-          },
-        }),
-      ),
-    ]);
-
-    const exitCode = await shell.exited;
+    const adbCommand = ['pm', 'list', 'packages', '-3'];
+    const {output, exitCode}  = await adbRun(adbClient!, adbCommand);
 
     if (exitCode !== 0) {
       throw new Error('Failed to list applications');
@@ -492,28 +478,8 @@ async function uninstallSelectedApp() {
   statusText.className = 'status-text';
 
   try {
-    const shell = await adbClient.subprocess.shellProtocol!.spawn(['pm', 'uninstall', packageName]);
-    var output: string = "";
-    // TODO uniform in a function ex spawn command
-    // Stdout and stderr will generate two Promise, await them together
-    await Promise.all([
-      shell.stdout.pipeThrough(new TextDecoderStream()).pipeTo(
-        new WritableStream({
-          write(chunk) {
-            output = chunk;
-          },
-        }),
-      ),
-      shell.stderr.pipeThrough(new TextDecoderStream()).pipeTo(
-        new WritableStream({
-          write(chunk) {
-            console.log(["[*] PM LIST ERR ", chunk]);
-          },
-        }),
-      ),
-    ]);
-
-    const exitCode = await shell.exited;
+    const adbCommand = ['pm', 'uninstall', packageName];
+    const {output, exitCode} = await adbRun(adbClient!, adbCommand);
 
     if (exitCode !== 0) {
       throw new Error(`Uninstall failed: ${output}`);
@@ -536,6 +502,34 @@ async function uninstallSelectedApp() {
   }
 }
 
+async function adbRun(adbClient: Adb, command: string | readonly string[]) : Promise<ProcessOutput> {
+  let ret: ProcessOutput = {
+    output: "",
+    exitCode: 0
+  };
+
+  const shell = await adbClient.subprocess.shellProtocol!.spawn(command);
+  // Stdout and stderr will generate two Promise, await them together
+  await Promise.all([
+    shell.stdout.pipeThrough(new TextDecoderStream()).pipeTo(
+      new WritableStream({
+        write(chunk) {
+         ret.output = chunk;
+        },
+      }),
+    ),
+    shell.stderr.pipeThrough(new TextDecoderStream()).pipeTo(
+      new WritableStream({
+        write(chunk) {
+          console.error(["[*] PM LIST ERR ", chunk]);
+        },
+      }),
+    ),
+  ]);
+
+  ret.exitCode = await shell.exited;
+  return ret;
+}
 
 refreshBtn.addEventListener('click', loadInstalledApps);
 uninstallBtn.addEventListener('click', uninstallSelectedApp);
