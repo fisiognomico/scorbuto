@@ -1,6 +1,11 @@
 {
+  "scripts": {
+    "build": "tsc",
+    "build:browser": "webpack"
+  },
   "dependencies": {
     "@chromeos/android-package-signer": "file:../android-package-sign-js",
+    "jdwp": "file:../jdwp",
     "@yume-chan/adb-credential-web": "^2.1.0",
     "@yume-chan/adb-daemon-webusb": "^2.1.0",
     "@yume-chan/adb-scrcpy": "^2.1.1",
