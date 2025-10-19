@@ -1,4 +1,4 @@
-import { Adb, AdbDaemonDevice, AdbDaemonTransport, AdbPacketData, AdbPacketInit} from "@yume-chan/adb";
+import { Adb, AdbDaemonDevice, AdbDaemonConnection, AdbDaemonTransport, AdbPacketData, AdbPacketInit} from "@yume-chan/adb";
 import { Consumable, ReadableWritablePair } from "@yume-chan/stream-extra";
 import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
 
@@ -6,6 +6,7 @@ export interface DeviceState {
   device: AdbDaemonDevice | null;
   client: Adb | null;
   credentials: AdbWebCredentialStore | null;
+  connection: AdbDaemonConnection | null;
   isConnected: boolean;
   isAuthenticating: boolean;
   error: string | null;
@@ -17,6 +18,7 @@ let deviceState: DeviceState  = {
   device: null,
   client: null,
   credentials: null,
+  connection: null,
   isConnected: false,
   isAuthenticating: false,
   error: null,
@@ -56,13 +58,14 @@ export const connectToDevice = async(): Promise<Adb | null> => {
 
     const transport = await AdbDaemonTransport.authenticate({
       serial: state.device.serial,
-      connection: connection as ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>,
+      connection: connection as AdbDaemonConnection,
       credentialStore: state.credentials!,
     });
     const client = new Adb(transport);
 
     setDeviceState({
       client,
+      connection: connection,
       isConnected: true,
       isAuthenticating: false,
       error: null
