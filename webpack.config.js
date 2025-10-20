@@ -17,7 +17,8 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      'android-package-sign-js': path.resolve(__dirname, '../android-package-sign-js')
+      'android-package-sign-js': path.resolve(__dirname, '../android-package-sign-js'),
+      'readline': false
     }
   },
   output: {
