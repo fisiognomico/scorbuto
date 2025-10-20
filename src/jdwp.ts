@@ -2,7 +2,7 @@ import {AdbDaemonWebUsbDeviceManager} from "@yume-chan/adb-daemon-webusb";
 import {DebugManager, WebUSBConfig} from "jdwp";
 import {DeviceState} from "./state";
 
-async function initFridaGadget(state: DeviceState, targetApp: string): Promise<void> {
+export async function initFridaGadget(state: DeviceState, targetApp: string): Promise<void> {
     const libFridaGadget = "libgadget.so";
     const libFridaConfig = "libgadget.config.so";
     try {
@@ -22,8 +22,7 @@ async function initFridaGadget(state: DeviceState, targetApp: string): Promise<v
         // Find Main Activity
         const findMainActivity = `cmd package resolve-activity --brief ${targetApp}`;
         const lines = await debugManager.executeCommand(findMainActivity);
-        const unlastLine = lines[(lines.length - 1)].split(/\r?\n/);
-        const lastLine = unlastLine[1].trim();
+        const lastLine = lines[1];
         let mainActivity = "";
         if (lastLine.includes('/')) {
             mainActivity = lastLine.trim();

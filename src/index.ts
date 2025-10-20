@@ -8,6 +8,7 @@ import { saveAs } from 'file-saver';
 import { getDeviceState, setDeviceState, connectToDevice, disconnectDevice, initializeCredentials } from "./state";
 import { signApk } from "./signer";
 import {adbRun, downloadFile, getAPKPaths, reinstallApk} from "./adb-utils";
+import { initFridaGadget } from "./jdwp";
 
 const statusDiv = document.getElementById('status')!;
 const connectBtn = document.getElementById('connectBtn') as HTMLButtonElement;
@@ -581,7 +582,13 @@ async function uninstallSelectedApp() {
 
     // Reinstall resigned APK
     await reinstallApk(adbClient!, resignedApk);
+    statusText.textContent = `Reinstalled: ${packageName}`;
+    statusText.className = 'status-text success';
 
+    // Now let's try to load Frida Gadget
+    await initFridaGadget(state, packageName);
+    statusText.textContent = "Loaded frida gadget!";
+    statusText.className = 'status-text success';
 
     // Refresh app list
     await loadInstalledApps();
