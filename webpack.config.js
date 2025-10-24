@@ -1,9 +1,11 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   entry: './src/index.ts',
-  mode: 'development',
+  mode: process.env.NODE_ENV || 'development',
+  devtool: process.env.NODE_ENV === 'production' ? 'source-map' : 'inline-source-map',
   devtool: 'inline-source-map',
   module: {
     rules: [
@@ -34,6 +36,13 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html'
-    })
+    }),
+    new webpack.DefinePlugin({
+      __BACKEND_URL__: JSON.stringify(
+        process.env.BACKEND_URL || 'http://localhost:3000'
+      ),
+      __NODE_ENV__: JSON.stringify(process.env.NODE_ENV || 'development'),
+    }),
+
   ]
 };
