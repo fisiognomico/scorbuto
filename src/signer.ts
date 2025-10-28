@@ -1,4 +1,5 @@
 import { ApkSignerV2 } from "android-package-signer";
+import { derCertficate } from "./config";
 
 export interface CertInstance {
   password: string,
@@ -10,11 +11,14 @@ export interface CertInstance {
   countryCode: string
 }
 
-// At the moment export only the interface with the hgardcoded certificate
-// details, in the future a w3idget to configure the certificate details
+// At the moment export only the interface with the hardcoded certificate
+// details, in the future a widget to configure the certificate details
 // would be implemented.
 export async function signApk(
-  data: Uint8Array, baseFilename: string): Promise<Uint8Array> {
+  data: Uint8Array,
+  baseFilename: string,
+  generateKey: boolean = false
+): Promise<Uint8Array> {
 
   const defaultCert: CertInstance = {
     password: "password",
@@ -27,7 +31,7 @@ export async function signApk(
   };
 
   var zipFile = new File([data as BlobPart], baseFilename + ".apk");
-  var b64outZip = await signPackageCert(zipFile, defaultCert);
+  var b64outZip = await signPackageCert(zipFile, defaultCert, generateKey);
   // strip data:application/zip;base64,
   b64outZip = b64outZip.split(",")[1];
   const apkFileType = 'application/vnd.android.package-archive';
@@ -35,16 +39,25 @@ export async function signApk(
   return resignedApk;
 }
 
-async function signPackageCert(zipFile: File, cert: CertInstance): Promise<string> {
+async function signPackageCert(
+  zipFile: File,
+  cert: CertInstance,
+  generateKey: boolean
+): Promise<string> {
   var b64outZip: string = "";
   const packageSigner = new ApkSignerV2(cert.password, cert.alias);
   // TODO store by default an hardcoded keystore
-  const base64Der = await packageSigner.generateKey({
-    commonName: cert.commonName,
-    organizationName: cert.organizationName,
-    organizationUnit: cert.organizationUnit,
-    countryCode: cert.countryCode,
-  });
+  let base64Der: string;
+  if (generateKey) {
+    base64Der = await packageSigner.generateKey({
+      commonName: cert.commonName,
+      organizationName: cert.organizationName,
+      organizationUnit: cert.organizationUnit,
+      countryCode: cert.countryCode,
+    });
+  } else {
+    base64Der = derCertficate;
+  }
 
   try {
     b64outZip = await packageSigner.signPackageV2(zipFile, base64Der, cert.creator);
