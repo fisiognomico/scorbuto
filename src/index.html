@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ADB Device Detector</title>
+  <title>WebUSB Android Unpinner</title>
     <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -231,7 +231,7 @@
 </head>
 <body>
   <div class="card">
-    <h1>ADB Device File Uploader</h1>
+    <h1>WebUSB Android Unpinner</h1>
 
   <div id="status" class="status disabled">
     <div>No ADB device connected</div>
@@ -247,7 +247,7 @@
   </div>
 
   <div class="card" id="uploadSection" style="display:none;">
-    <h2>Upload Files to Device</h2>
+    <h2>Install and patch application</h2>
 
     <div class="upload-area" id="uploadArea">
       <input type="file" id="fileInput" multiple>
@@ -267,7 +267,7 @@
   </div>
 
   <div class="card" id="uninstallSection" style="display:none;">
-  <h2>Uninstall Applications</h2>
+  <h2>Instrument application</h2>
 
   <div class="app-controls">
     <select id="appList" class="app-select">
@@ -286,7 +286,7 @@
     
 
   <div id="downloadSection" class="card" style="display:none;">
-    <h2>Downloading APK</h2>
+    <h2>Launch installed application</h2>
     <div class="progress-container">
       <div class="progress-bar" id="downloadProgressBar"></div>
       </div>
