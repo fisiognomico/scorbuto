@@ -10,6 +10,7 @@ import { signApk } from "./signer";
 import { AdbManager } from "./adb-manager";
 import { initFridaGadget } from "./jdwp";
 import { enableDebuggableFlag, getPackageName } from "./apk-patcher";
+import { config } from "./config";
 
 const statusDiv = document.getElementById('status')!;
 const connectBtn = document.getElementById('connectBtn') as HTMLButtonElement;
@@ -38,7 +39,6 @@ if (!navigator.usb) {
 // State management
 let observer: AdbDaemonWebUsbDeviceObserver | null = null;
 let selectedFiles: File[] = [];
-const APK_UPLOAD_PATH = '/data/local/tmp/';
 
 interface ApkDescriptor {
   name: string,
@@ -240,7 +240,7 @@ async function installAndInstrumentApp(
 
   if (signedApks.length === 1) {
     // Single APK - install as bundle
-    const remotePath = `${APK_UPLOAD_PATH}${packageName}.apk`;
+    const remotePath = `${config.devicePath}${packageName}.apk`;
     await adbManager.installApk(signedApks[0], remotePath);
   } else {
     // Multiple APKs - convert to Files and install as split
@@ -356,16 +356,28 @@ uploadBtn.addEventListener('click', async () => {
   const adbManager = new AdbManager(state.client);
 
   try {
-    // Connect to device if not already connected
-    // Get ADB sync client
-
     // Check if we are installing APKs
     const isApkInstall = selectedFiles.every(file => file.name.toLowerCase().endsWith('.apk'))
 
     if (isApkInstall) {
+      const apkFiles: ApkFile[] = await Promise.all(selectedFiles.map(async (file) => ({
+        // It should pollute the filesystem as patching is local
+        path: `${config.devicePath}/${file.name}`,
+        data: new Uint8Array(await file.arrayBuffer()),
+      })));
+
+      // Get package name from one of the files, the first
+      const manifestBuffer = await extractManifestFromApk(apkFiles[0].data);
+      const packageName = getPackageName(manifestBuffer);
+
+      statusText.textContent = `Patching: ${selectedFiles.length} packets...`;
+      statusText.className = 'status-text';
+      const signedApks = await patchAndSignApks(apkFiles, packageName!);
+
+
       statusText.textContent = `Installing: ${selectedFiles.length} packets...`;
       statusText.className = 'status-text';
-      await adbManager.installSplitApk(selectedFiles);
+      await installAndInstrumentApp(adbManager, signedApks, packageName!, state);
 
       statusText.textContent = 'App installed successfully!';
       statusText.className = 'status-text success';
