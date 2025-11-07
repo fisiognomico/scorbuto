@@ -1,4 +1,3 @@
-import {AdbDaemonWebUsbDeviceManager} from "@yume-chan/adb-daemon-webusb";
 import {DebugManager, WebUSBConfig} from "libjdwp";
 import {DeviceState} from "./state";
 
@@ -50,7 +49,7 @@ export async function initFridaGadget(state: DeviceState, targetApp: string): Pr
         // Set breakpoint on Activity.onCreate()
         const activityClass = "Landroid/app/Activity;";
         const createMethod = "onCreate";
-        const {requestId, threadId} = await debugSession.client.setBreakpointAndWait(
+        const {requestId: _req, threadId} = await debugSession.client.setBreakpointAndWait(
             activityClass,
             createMethod
         );

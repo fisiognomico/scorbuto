@@ -1,16 +1,12 @@
 import { AdbDaemonWebUsbDeviceObserver} from "@yume-chan/adb-daemon-webusb";
-import { Adb, AdbSync } from "@yume-chan/adb";
-import { ReadableStream, TextDecoderStream, WritableStream } from "@yume-chan/stream-extra";
-import { PackageManager } from "@yume-chan/android-bin";
 import JSZip from "jszip";
-import { saveAs } from 'file-saver';
 
 import { DeviceState, getDeviceState, setDeviceState, connectToDevice, disconnectDevice, initializeCredentials, configureDevice } from "./state";
 import { signApk } from "./signer";
 import { AdbManager } from "./adb-manager";
 import { initFridaGadget } from "./jdwp";
 import { enableDebuggableFlag, getPackageName } from "./apk-patcher";
-import { config, generateFridaConfigJs, ProxyConfig } from "./config";
+import { config, generateFridaConfigJs } from "./config";
 
 const statusDiv = document.getElementById('status')!;
 const connectBtn = document.getElementById('connectBtn') as HTMLButtonElement;

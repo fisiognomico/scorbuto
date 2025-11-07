@@ -148,7 +148,7 @@ export const configureDevice = async ()  => {
         'scripts/hide-debugger.js',
       ];
 
-      const results = await Promise.all(
+      await Promise.all(
         files.map(f => adbManager.pushIfNotPresent(f))
       );
     } catch (error) {

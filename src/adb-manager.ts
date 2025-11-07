@@ -1,4 +1,4 @@
-import { Adb, AdbSync } from "@yume-chan/adb";
+import { Adb } from "@yume-chan/adb";
 import { ReadableStream, TextDecoderStream, WritableStream } from "@yume-chan/stream-extra";
 import { config } from "./config";
 
@@ -490,6 +490,10 @@ export class AdbManager {
   private async createInstallSession(totalSize: number): Promise<number> {
     const adbCommand = ["pm", "install-create", "-S", totalSize.toString()];
     const {output, exitCode} = await this.adbRun(adbCommand);
+
+    if (exitCode !== 0) {
+      console.error("[createInstallSession] PM returned: ", output);
+    }
 
     const match = output.match(/Success: created install session \[(\d+)\]/);
     if (!match) {

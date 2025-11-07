@@ -34,7 +34,6 @@ export async function signApk(
   var b64outZip = await signPackageCert(zipFile, defaultCert, generateKey);
   // strip data:application/zip;base64,
   b64outZip = b64outZip.split(",")[1];
-  const apkFileType = 'application/vnd.android.package-archive';
   const resignedApk = Uint8Array.from(atob(b64outZip), c => c.charCodeAt(0));
   return resignedApk;
 }

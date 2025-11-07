@@ -38,7 +38,7 @@ class StringPoolChunk {
           const bytes = this.chunk_data.slice(strOffset + 2, strOffset + 2 + len * 2);
           str = new TextDecoder('utf-16le').decode(bytes).replace(/\0+$/, '');
         } else {
-          const len = this.view.getUint16(strOffset, true);
+          // const len = this.view.getUint16(strOffset, true);
           const byteLen = this.view.getUint16(strOffset + 2, true);
           const bytes = this.chunk_data.slice(strOffset + 4, strOffset + 4 + byteLen);
           str = new TextDecoder('utf-8').decode(bytes);
@@ -235,14 +235,8 @@ class ResourceMapChunk {
     // console.log(`Resource map before: size=${this.get_size()}`);
     // console.log(`Adding resource entry at index=${stringIndex}, resourceId=0x${DEBUGGABLE_RESOURCE_ID.toString(16)}`);
 
-    const oldChunkSize = this.view.getUint32(4, true);
-    const headerSize = this.view.getUint16(2, true);
-
-    // Each resource entry is 4 bytes (uint32 resource ID)
-    const entryCount = (oldChunkSize - headerSize) / 4;
-    // const newChunkSize = oldChunkSize + 4;
-
     // Create new buffer
+    const headerSize = this.view.getUint16(2, true);
     const newChunkSize = headerSize + (stringIndex + 1) * 4;
     const newBuffer = new Uint8Array(Math.max(this.chunk_data.length, newChunkSize));
     const newView = new DataView(newBuffer.buffer);
@@ -256,10 +250,6 @@ class ResourceMapChunk {
 
     // Update chunk size
     newView.setUint32(4, newChunkSize, true);
-
-    // Append new resource ID entry (sorted, so usually at the end)
-    // const newEntryPos = headerSize + entryCount * 4;
-    // newView.setUint32(newEntryPos, DEBUGGABLE_RESOURCE_ID, true);
 
     this.chunk_data = newBuffer;
     this.view = new DataView(this.chunk_data.buffer);
@@ -424,7 +414,6 @@ class BinaryXmlParser {
 
     while (chunkOffset < this.buffer.length) {
       const type = this.view.getUint16(chunkOffset, true);
-      const headerSize = this.view.getUint16(chunkOffset + 2, true);
       const chunkSize = this.view.getUint32(chunkOffset + 4, true);
 
       if (chunkSize === 0) break;
@@ -502,39 +491,6 @@ class BinaryXmlParser {
     }
   }
 
-  private findApplicationTagOffset(): number | null {
-    let offset = this.xmlStart;
-    const fileEnd = this.buffer.length;
-    // console.log(`Starting to scan at offset ${offset}, file length ${fileEnd}`);
-
-    while (offset < fileEnd - 8) {
-      const type = this.view.getUint16(offset, true);
-      const size = this.view.getUint32(offset + 4, true);
-
-    if (size === 0 || size < 8) {
-        // console.log(`  [${offset.toString().padStart(6)}] Invalid size: ${size}, stopping`);
-        break;
-      }
-      if (offset + size > fileEnd) {
-        // console.log(`  [${offset.toString().padStart(6)}] Chunk extends beyond file, stopping`);
-        break;
-      }
-
-      if (type === 0x0102) { // START_ELEMENT
-        // console.log(`Found START_ELEMENT at offset: ${offset}`);
-        const nameSi = this.view.getUint32(offset + 20, true);
-        // console.log(`Example string found: ${this.strings[nameSi]}`);
-        if (nameSi < this.strings.length && this.strings[nameSi] === 'application') {
-          return offset;
-        }
-      }
-
-      offset += size;
-    }
-
-    return null;
-  }
-
   /**
    * Calculate the total size of the reconstructed binary XML
    *
@@ -570,29 +526,6 @@ class BinaryXmlParser {
     }
 
     return totalSize;
-  }
-
-  private findDebuggableAttribute(appTagOffset: number): number | null {
-    const attributeStart = this.view.getUint16(appTagOffset + 24, true);
-    const attributeCount = this.view.getUint16(appTagOffset + 28, true);
-    const attributeSize = this.view.getUint16(appTagOffset + 26, true);
-
-    const androidNamespace = 'http://schemas.android.com/apk/res/android';
-    const androidNsIndex = this.strings.indexOf(androidNamespace);
-
-    for (let i = 0; i < attributeCount; i++) {
-      const attrOffset = appTagOffset + attributeStart + i * attributeSize;
-      const namespaceSi = this.view.getUint32(attrOffset, true);
-      const nameSi = this.view.getUint32(attrOffset + 4, true);
-
-      if (namespaceSi === androidNsIndex && nameSi < this.strings.length) {
-        if (this.strings[nameSi] === 'debuggable') {
-          return attrOffset;
-        }
-      }
-    }
-
-    return null;
   }
 
   getPackageNameFromManifest(): string | null {

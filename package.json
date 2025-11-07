@@ -20,7 +20,7 @@
 
   "scripts": {
     "dev": "webpack serve --mode development",
-    "build": "tsc && npm run build:browser",
+    "build": "npm run build:browser",
     "build:browser": "webpack --mode production",
     "build:dev": "webpack --mode development",
     "type-check": "tsc --noEmit",

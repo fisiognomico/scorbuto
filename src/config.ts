@@ -1,6 +1,5 @@
 import { ensureTrailingSlash } from "./utils";
 import { signDerCertficate } from "./const/cert";
-import { setDeviceState } from "./state";
 
 declare const __BACKEND_URL__: string;
 declare const __NODE_ENV__: string;
